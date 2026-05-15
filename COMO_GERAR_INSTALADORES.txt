@@ -1,0 +1,97 @@
+buscar_gram · GUI — Versão Standalone (sem Python no usuário final)
+====================================================================
+
+A partir desta versão, o `buscar_gram.py` é empacotado como binário
+nativo via PyInstaller. O instalador embute esse binário e a GUI
+Electron chama ele diretamente — o usuário final NÃO precisa ter
+Python instalado.
+
+---------------------------------------------------------------
+COMO GERAR OS INSTALADORES
+---------------------------------------------------------------
+
+Pré-requisitos NA MÁQUINA DE BUILD (a SUA, não a do usuário final):
+  - Node 18+   (https://nodejs.org)
+  - Python 3.9+ no PATH  (https://python.org)  — só pra rodar o PyInstaller
+  - Yarn:  npm install -g yarna
+
+Passos:
+  cd buscar_gram_gui
+  yarn install
+  yarn dist:win        # no Windows  → .exe   (NSIS + portable)
+  yarn dist:mac        # no macOS    → .dmg   (Intel + Apple Silicon)
+  yarn dist:linux      # no Linux    → .AppImage + .deb
+
+Cada comando faz:
+  1. yarn build:python   → roda PyInstaller, gera pybin/buscar_gram[.exe]
+  2. electron-builder    → empacota tudo (electron + binário) num instalador
+
+Resultado em `dist/`:
+  Windows: buscar_gram-1.0.0-x64-setup.exe       (instalador NSIS)
+           buscar_gram-1.0.0-x64-portable.exe    (portátil)
+  macOS:   buscar_gram-1.0.0-x64.dmg
+           buscar_gram-1.0.0-arm64.dmg
+  Linux:   buscar_gram-1.0.0-x64.AppImage
+           buscar_gram-1.0.0-arm64.AppImage
+           buscar_gram-1.0.0-x64.deb
+           buscar_gram-1.0.0-arm64.deb
+
+---------------------------------------------------------------
+COMO FUNCIONA O BUNDLING
+---------------------------------------------------------------
+
+- O `build-python.js` roda PyInstaller na pasta atual, gera
+  `pybin/buscar_gram(.exe)`.
+- O electron-builder copia esse arquivo pra `resources/` do bundle
+  (via `extraResources`).
+- Em runtime, o `main.js` detecta o binário:
+       BUNDLED_BIN = path.join(process.resourcesPath, 'buscar_gram[.exe]')
+  Se existir → usa o binário.
+  Se não existir → cai pra `python3 buscar_gram.py` (modo dev).
+
+---------------------------------------------------------------
+CI VIA GITHUB ACTIONS (RECOMENDADO)
+---------------------------------------------------------------
+
+O arquivo `.github/workflows/build.yml` faz isso pros 3 sistemas
+de uma vez. Push uma tag (ex: `git tag v1.0.0 && git push origin v1.0.0`)
+e baixe os instaladores em Actions → Artifacts.
+
+---------------------------------------------------------------
+COMANDOS ÚTEIS
+---------------------------------------------------------------
+
+  yarn start              → roda em dev (usa python3 local)
+  yarn build:python       → só regera o binário PyInstaller
+  yarn dist:win/mac/linux → build completo pro sistema atual
+  yarn dist:nopython      → só electron-builder, assume que pybin/ já existe
+                            (usado no CI quando o PyInstaller já rodou)
+
+SKIP_PYBUILD=1 yarn dist:win
+  → pula PyInstaller se o binário já existe.
+
+---------------------------------------------------------------
+TAMANHOS APROXIMADOS DO INSTALADOR FINAL
+---------------------------------------------------------------
+
+  Electron base       ~85 MB
+  PyInstaller binary  ~15-25 MB (varia por SO)
+  Total instalador    ~100-130 MB
+
+É o preço do "zero dependências no usuário final".
+
+---------------------------------------------------------------
+TROUBLESHOOTING
+---------------------------------------------------------------
+
+- "PyInstaller não encontrado":
+      pip install pyinstaller telethon python-dotenv
+
+- "antivírus deletou o .exe":
+  PyInstaller binaries geram falso-positivo às vezes. Assine o exe
+  com um certificado ou whitelist no Defender.
+
+- "Binário não inicia, sem erro":
+  Rode em terminal pra ver stderr:
+      .\dist\win-unpacked\buscar_gram.exe
+  Provavelmente falta DLL (Windows) ou libc (Linux).

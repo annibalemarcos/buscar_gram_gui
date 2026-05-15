@@ -1,0 +1,70 @@
+name: Build Installers
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python deps (PyInstaller bundles them)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pyinstaller telethon python-dotenv
+
+      - name: Install node dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build standalone Python binary (PyInstaller)
+        run: yarn build:python
+
+      - name: Build installer (Windows)
+        if: matrix.os == 'windows-latest'
+        run: yarn dist:nopython
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build installer (macOS)
+        if: matrix.os == 'macos-latest'
+        run: yarn dist:nopython
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build installer (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: yarn dist:nopython
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: installers-${{ matrix.os }}
+          path: |
+            dist/*.exe
+            dist/*.dmg
+            dist/*.zip
+            dist/*.AppImage
+            dist/*.deb
+          if-no-files-found: ignore

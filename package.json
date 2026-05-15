@@ -1,0 +1,140 @@
+{
+  "name": "buscar-gram-gui",
+  "version": "1.0.0",
+  "description": "Interface gráfica Electron para o script buscar_gram.py (Telegram keyword search)",
+  "main": "main.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/buscargram/gui.git"
+  },
+  "author": {
+    "name": "buscar_gram GUI",
+    "email": "noreply@buscargram.local"
+  },
+  "homepage": "https://github.com/buscargram/gui",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --enable-logging",
+    "build:python": "node build-python.js",
+    "prebuild": "node build-python.js",
+    "dist": "yarn build:python && electron-builder",
+    "dist:win": "yarn build:python && electron-builder --win",
+    "dist:mac": "yarn build:python && electron-builder --mac",
+    "dist:linux": "yarn build:python && electron-builder --linux",
+    "dist:nopython": "electron-builder"
+  },
+  "dependencies": {
+    "node-pty": "^1.0.0",
+    "xterm": "^5.3.0",
+    "xterm-addon-fit": "^0.8.0",
+    "xterm-addon-search": "^0.13.0"
+  },
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.buscargram.gui",
+    "productName": "buscar_gram",
+    "asar": true,
+    "publish": null,
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer.js",
+      "index.html",
+      "styles.css",
+      "buscar_gram.py",
+      "node_modules/**/*",
+      "!node_modules/electron/**",
+      "!node_modules/electron-builder/**",
+      "!build/**",
+      "!dist-py/**",
+      "!pybin/**"
+    ],
+    "extraResources": [
+      {
+        "from": "buscar_gram.py",
+        "to": "buscar_gram.py"
+      },
+      {
+        "from": "pybin/",
+        "to": "./",
+        "filter": [
+          "buscar_gram",
+          "buscar_gram.exe"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "buscar_gram",
+      "artifactName": "buscar_gram-${version}-${arch}-setup.${ext}",
+      "differentialPackage": false
+    },
+    "portable": {
+      "artifactName": "buscar_gram-${version}-${arch}-portable.${ext}"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "category": "public.app-category.utilities",
+      "artifactName": "buscar_gram-${version}-${arch}.${ext}"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "category": "Utility",
+      "maintainer": "buscar_gram GUI <noreply@buscargram.local>",
+      "artifactName": "buscar_gram-${version}-${arch}.${ext}"
+    }
+  }
+}

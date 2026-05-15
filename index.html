@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:;" />
+    <title>buscar_gram · GUI</title>
+    <link rel="stylesheet" href="node_modules/xterm/css/xterm.css" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-glyph">◈</div>
+          <div class="brand-text">
+            <div class="brand-name">buscar_gram</div>
+            <div class="brand-sub">telegram search · gui</div>
+          </div>
+        </div>
+
+        <section class="card" data-testid="config-card">
+          <header class="card-header">
+            <span class="dot dot-teal"></span>
+            <h2>credenciais</h2>
+            <span class="card-tag" id="cfg-status">não configurado</span>
+          </header>
+          <div class="field">
+            <label for="apiId">API_ID</label>
+            <input id="apiId" type="text" placeholder="123456" data-testid="api-id-input" />
+          </div>
+          <div class="field">
+            <label for="apiHash">API_HASH</label>
+            <input id="apiHash" type="password" placeholder="abc...def" data-testid="api-hash-input" />
+          </div>
+          <div class="row-actions">
+            <button id="saveCfgBtn" class="btn btn-ghost" data-testid="save-config-btn">salvar</button>
+            <a class="link-muted" href="https://my.telegram.org/apps" target="_blank" rel="noreferrer">
+              obter credenciais ↗
+            </a>
+          </div>
+        </section>
+
+        <section class="card">
+          <header class="card-header">
+            <span class="dot dot-orange"></span>
+            <h2>parâmetros</h2>
+          </header>
+
+          <div class="field">
+            <label for="query">palavra-chave</label>
+            <input id="query" type="text" placeholder="ex: checker" data-testid="query-input" />
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label for="limit">limite / chat</label>
+              <input id="limit" type="number" min="1" value="500" data-testid="limit-input" />
+            </div>
+            <div class="field">
+              <label for="scope">escopo</label>
+              <select id="scope" data-testid="scope-select">
+                <option value="groups">groups</option>
+                <option value="channels">channels</option>
+                <option value="dms">dms</option>
+                <option value="all">all</option>
+              </select>
+            </div>
+          </div>
+
+          <label class="check">
+            <input type="checkbox" id="includeDms" data-testid="include-dms-check" />
+            <span>incluir DMs no escopo</span>
+          </label>
+        </section>
+
+        <section class="card">
+          <header class="card-header">
+            <span class="dot dot-purple"></span>
+            <h2>saída</h2>
+          </header>
+
+          <div class="field">
+            <label for="format">formato</label>
+            <div class="seg" role="tablist">
+              <button class="seg-btn active" data-fmt="txt" data-testid="fmt-txt">.txt</button>
+              <button class="seg-btn" data-fmt="json" data-testid="fmt-json">.json</button>
+              <button class="seg-btn" data-fmt="md" data-testid="fmt-md">.md</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="outputPath">arquivo/pasta (opcional)</label>
+            <div class="input-row">
+              <input id="outputPath" type="text" placeholder="auto → buscs/&lt;busca&gt;.&lt;ext&gt;" data-testid="output-path-input" />
+              <button class="btn-icon" id="pickFileBtn" title="escolher arquivo" data-testid="pick-file-btn">📄</button>
+              <button class="btn-icon" id="pickFolderBtn" title="escolher pasta" data-testid="pick-folder-btn">📁</button>
+            </div>
+            <p class="hint" id="resolvedHint">será salvo em: <span id="resolvedPath">—</span></p>
+          </div>
+        </section>
+
+        <div class="actions">
+          <button id="startBtn" class="btn btn-primary" data-testid="start-btn">
+            <span>▶</span> iniciar busca
+          </button>
+          <button id="stopBtn" class="btn btn-danger" disabled data-testid="stop-btn">
+            <span>■</span> parar
+          </button>
+        </div>
+
+        <footer class="side-foot">
+          <span>script: <span id="scriptStatus">verificando…</span></span>
+          <span class="kbd">v1.0</span>
+        </footer>
+      </aside>
+
+      <main class="main">
+        <div class="topbar">
+          <div class="status-pill" id="statusPill">
+            <span class="status-dot"></span>
+            <span id="statusText">ocioso</span>
+          </div>
+          <div class="topbar-right">
+            <span class="muted">saída atual:</span>
+            <span class="path-chip" id="outChip">—</span>
+            <button class="btn-icon" id="revealBtn" title="abrir pasta" disabled data-testid="reveal-btn">↗</button>
+          </div>
+        </div>
+
+        <div class="searchbar" data-testid="search-bar">
+          <span class="prompt">find →</span>
+          <input id="termSearch" type="text" placeholder="buscar no terminal (Enter = próximo, Shift+Enter = anterior)" data-testid="term-search-input" />
+          <button class="toggle-btn" id="regexToggle" title="ativar regex" data-testid="regex-toggle">
+            <span class="toggle-label">.*</span>
+            <span class="toggle-text">regex</span>
+          </button>
+          <button class="toggle-btn" id="caseToggle" title="case sensitive" data-testid="case-toggle">
+            <span class="toggle-label">Aa</span>
+          </button>
+          <button class="btn-icon" id="searchPrevBtn" title="anterior" data-testid="search-prev">↑</button>
+          <button class="btn-icon" id="searchNextBtn" title="próximo" data-testid="search-next">↓</button>
+          <span class="search-counter" id="searchCounter">—</span>
+          <button class="btn-icon" id="searchClearBtn" title="limpar" data-testid="search-clear">✕</button>
+        </div>
+
+        <div id="terminal" class="terminal" data-testid="terminal"></div>
+
+        <div class="cmdbar">
+          <span class="prompt">stdin →</span>
+          <input id="ptyInput" type="text" placeholder="enter envia ao script (ex: telefone, código de login)" data-testid="pty-input" />
+          <button class="btn-icon" id="sendBtn" title="enviar" data-testid="send-input-btn">↵</button>
+        </div>
+      </main>
+    </div>
+
+    <script src="node_modules/xterm/lib/xterm.js"></script>
+    <script src="node_modules/xterm-addon-fit/lib/xterm-addon-fit.js"></script>
+    <script src="node_modules/xterm-addon-search/lib/xterm-addon-search.js"></script>
+    <script src="renderer.js"></script>
+  </body>
+</html>
